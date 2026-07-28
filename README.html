@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOP: Credit Card Claims Matcher</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #f0f4f8;
+  color: #1e293b;
+  line-height: 1.7;
+  padding: 40px 24px 80px;
+}
+.page-header {
+  max-width: 880px;
+  margin: 0 auto 48px;
+  padding: 40px 44px;
+  background: linear-gradient(135deg, #0f2044 0%, #1a3a6e 60%, #1e5fa8 100%);
+  border-radius: 16px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.page-header .label {
+  font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: #7dd3fc; margin-bottom: 10px;
+}
+.page-header h1 { font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 12px; }
+.page-header .subtitle { font-size: 15px; color: #bfdbfe; max-width: 560px; }
+.meta-row { display: flex; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
+.meta-item { display: flex; flex-direction: column; gap: 3px; }
+.meta-item .meta-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #7dd3fc; font-weight: 600; }
+.meta-item .meta-value { font-size: 14px; color: #e0f2fe; font-weight: 500; }
+
+.step {
+  max-width: 880px; margin: 0 auto 24px; background: #fff;
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  border-left: 5px solid;
+}
+.step-header {
+  display: flex; align-items: center; gap: 18px;
+  padding: 20px 28px; border-bottom: 1px solid #f1f5f9;
+}
+.step-num {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.step-title { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.step-tag {
+  margin-left: auto; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+}
+.step-body { padding: 24px 28px; font-size: 15px; color: #334155; }
+.step-body p { margin-bottom: 12px; }
+.step-body p:last-child { margin-bottom: 0; }
+.step-body strong { color: #0f172a; }
+
+.s1 { border-left-color: #1e5fa8; } .s1 .step-num { background: #1e5fa8; } .s1 .step-tag { background: #dbeafe; color: #1e5fa8; }
+.s2 { border-left-color: #0f766e; } .s2 .step-num { background: #0f766e; } .s2 .step-tag { background: #ccfbf1; color: #0f766e; }
+.s3 { border-left-color: #7c3aed; } .s3 .step-num { background: #7c3aed; } .s3 .step-tag { background: #ede9fe; color: #7c3aed; }
+.s4 { border-left-color: #0369a1; } .s4 .step-num { background: #0369a1; } .s4 .step-tag { background: #e0f2fe; color: #0369a1; }
+.s5 { border-left-color: #15803d; } .s5 .step-num { background: #15803d; } .s5 .step-tag { background: #dcfce7; color: #15803d; }
+.s6 { border-left-color: #b45309; } .s6 .step-num { background: #b45309; } .s6 .step-tag { background: #fef3c7; color: #b45309; }
+.s7 { border-left-color: #0891b2; } .s7 .step-num { background: #0891b2; } .s7 .step-tag { background: #e0f7fa; color: #0891b2; }
+.s8 { border-left-color: #0f2044; } .s8 .step-num { background: #0f2044; } .s8 .step-tag { background: #e2e8f0; color: #0f2044; }
+
+.substeps { list-style: none; counter-reset: sub; margin: 8px 0; }
+.substeps li {
+  counter-increment: sub; display: flex; gap: 14px;
+  margin-bottom: 10px; align-items: flex-start;
+}
+.substeps li::before {
+  content: counter(sub); min-width: 26px; height: 26px;
+  border-radius: 50%; background: #e2e8f0; color: #475569;
+  font-size: 12px; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+
+.callout {
+  border-radius: 10px; padding: 16px 20px; margin: 16px 0;
+  display: flex; gap: 14px; align-items: flex-start;
+  font-size: 14px; line-height: 1.6;
+}
+.callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.callout-body strong {
+  display: block; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;
+}
+.callout.warning { background: #fff7ed; border: 1px solid #fed7aa; }
+.callout.warning .callout-body strong { color: #c2410c; }
+.callout.warning .callout-body { color: #7c2d12; }
+.callout.danger { background: #fef2f2; border: 1.5px solid #fca5a5; }
+.callout.danger .callout-body strong { color: #dc2626; }
+.callout.danger .callout-body { color: #7f1d1d; }
+.callout.info { background: #eff6ff; border: 1px solid #bfdbfe; }
+.callout.info .callout-body strong { color: #1d4ed8; }
+.callout.info .callout-body { color: #1e3a8a; }
+.callout.success { background: #f0fdf4; border: 1px solid #86efac; }
+.callout.success .callout-body strong { color: #15803d; }
+.callout.success .callout-body { color: #14532d; }
+.callout.purple { background: #faf5ff; border: 1px solid #d8b4fe; }
+.callout.purple .callout-body strong { color: #7c3aed; }
+.callout.purple .callout-body { color: #4c1d95; }
+.callout.amber { background: #fffbeb; border: 1.5px solid #fcd34d; }
+.callout.amber .callout-body strong { color: #d97706; }
+.callout.amber .callout-body { color: #78350f; }
+
+.cmd-block { background: #0f172a; border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+.cmd-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7dd3fc; margin-bottom: 6px; }
+.cmd-text { font-family: "Consolas", "Courier New", monospace; font-size: 13px; color: #a5f3fc; word-break: break-all; line-height: 1.8; }
+
+.flow {
+  max-width: 880px; margin: 0 auto 40px; background: #fff;
+  border-radius: 14px; padding: 28px 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07); overflow-x: auto;
+}
+.flow-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8; margin-bottom: 20px; }
+.flow-steps { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; min-width: max-content; }
+.flow-item { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.flow-dot { width: 36px; height: 36px; border-radius: 50%; background: #0f2044; color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.flow-label { font-size: 11px; font-weight: 600; color: #475569; max-width: 80px; line-height: 1.3; }
+.flow-arrow { color: #cbd5e1; font-size: 18px; margin: 0 6px; padding-bottom: 20px; flex-shrink: 0; }
+
+.cmd-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px; }
+.cmd-table th { background: #0f2044; color: #e0f2fe; text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+.cmd-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+.cmd-table tr:last-child td { border-bottom: none; }
+.cmd-table tr:nth-child(even) td { background: #f8fafc; }
+.cmd-mono { font-family: "Consolas", monospace; font-size: 12px; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; color: #0369a1; white-space: nowrap; }
+
+.section-label {
+  max-width: 880px; margin: 40px auto 16px;
+  font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: #94a3b8; padding-left: 4px;
+}
+
+.timeline-box {
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 10px; padding: 20px 24px; margin: 16px 0;
+}
+.timeline-row {
+  display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px;
+}
+.timeline-row:last-child { margin-bottom: 0; }
+.timeline-dot {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; background: #0f2044;
+}
+.timeline-content { flex: 1; padding-top: 4px; }
+.timeline-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+.timeline-desc { font-size: 13px; color: #64748b; margin-top: 2px; }
+.timeline-time { font-size: 12px; font-weight: 700; color: #1e5fa8; background: #dbeafe; padding: 2px 8px; border-radius: 10px; white-space: nowrap; margin-top: 4px; display: inline-block; }
+
+.legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 14px 0; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; }
+.legend-swatch { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+</style><body>
+
+<div class="page-header">
+  <div class="label">Standard Operating Procedure</div>
+  <h1>Credit Card Claims Matcher</h1>
+  <p class="subtitle">Cross-check credit card statements against receipts, auto-categorise claims, and generate the claims Excel — fully local, no external access.</p>
+  <div class="meta-row">
+    <div class="meta-item"><span class="meta-label">Document</span><span class="meta-value">SOP-CCM-001</span></div>
+    <div class="meta-item"><span class="meta-label">Version</span><span class="meta-value">2.0</span></div>
+    <div class="meta-item"><span class="meta-label">Prepared for</span><span class="meta-value">Quality Oracle Sdn. Bhd.</span></div>
+    <div class="meta-item"><span class="meta-label">Last updated</span><span class="meta-value">July 2026</span></div>
+  </div>
+</div>
+
+<!-- FLOW -->
+<div class="flow">
+  <div class="flow-title">End-to-end process overview</div>
+  <div class="flow-steps">
+    <div class="flow-item"><div class="flow-dot">1</div><div class="flow-label">Launch the App</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">2</div><div class="flow-label">Choose Bank & Upload Statement</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">3</div><div class="flow-label">Upload Receipts</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">4</div><div class="flow-label">Confirm Save Location</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">5</div><div class="flow-label">Run Matching</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">6</div><div class="flow-label">Review Results</div></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-item"><div class="flow-dot">7</div><div class="flow-label">Download & Extract Properly</div></div>
+  </div>
+</div>
+
+<div class="section-label">A — Getting Started</div>
+
+<!-- STEP 1 -->
+<div class="step s1">
+  <div class="step-header">
+    <div class="step-num">1</div>
+    <div class="step-title">First-Time Setup</div>
+    <div class="step-tag">One-time</div>
+  </div>
+  <div class="step-body">
+    <p>Open a terminal in the project folder and install dependencies:</p>
+    <div class="cmd-block">
+      <div class="cmd-label">Install dependencies</div>
+      <div class="cmd-text">pip install -r requirements.txt</div>
+    </div>
+    <p>Copy <strong>key.env.example</strong> to <strong>key.env</strong> in the same folder, then fill in <strong>ANTHROPIC_API_KEY</strong> — this is the only credential the app needs.</p>
+    <div class="callout info">
+      <div class="callout-icon">ℹ</div>
+      <div class="callout-body">
+        <strong>Edit the bank list</strong>
+        Open <strong>config.py</strong> and update the <strong>BANKS</strong> list with the banks you claim from. This list only populates the dropdown in Step 2 — it does not need to match any folder path.
+      </div>
+    </div>
+    <div class="callout success">
+      <div class="callout-icon">🔒</div>
+      <div class="callout-body">
+        <strong>No external access, by design</strong>
+        There is no SharePoint/Graph client, no URL fetching, and no credentials beyond the Anthropic API key anywhere in this app. Statements and receipts only ever enter via direct browser upload, and nothing is written back anywhere automatically.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2 -->
+<div class="step s2">
+  <div class="step-header">
+    <div class="step-num">2</div>
+    <div class="step-title">Launching the App</div>
+    <div class="step-tag">Daily</div>
+  </div>
+  <div class="step-body">
+    <p>Open a terminal in the project folder and run:</p>
+    <div class="cmd-block">
+      <div class="cmd-label">Start the app</div>
+      <div class="cmd-text">streamlit run app.py</div>
+    </div>
+    <p>A browser tab opens automatically at the app's form.</p>
+    <div class="callout danger">
+      <div class="callout-icon">⛔</div>
+      <div class="callout-body">
+        <strong>Won't start: "ANTHROPIC_API_KEY not set"</strong>
+        Add the key to key.env (Step 1), then restart the app.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">B — Running a Reconciliation</div>
+
+<!-- STEP 3 -->
+<div class="step s3">
+  <div class="step-header">
+    <div class="step-num">3</div>
+    <div class="step-title">Choose Bank, Upload Statement & Receipts</div>
+    <div class="step-tag">Per statement</div>
+  </div>
+  <div class="step-body">
+    <ul class="substeps">
+      <li><strong>Choose Bank</strong> from the dropdown — this is a label passed to Claude as a hint when reading the statement, and used to name the output. It doesn't need to match any folder path.</li>
+      <li><strong>Upload the statement</strong> — a single credit card statement PDF.</li>
+      <li><strong>Upload the receipts</strong> — select every receipt/invoice file for this statement at once (Ctrl/Cmd-click multiple files, or drag a whole selection in). Accepts PDF, PNG, and JPG.</li>
+    </ul>
+    <div class="callout info">
+      <div class="callout-icon">📁</div>
+      <div class="callout-body">
+        <strong>"Uploading a folder" in practice</strong>
+        Browsers don't have a native folder-upload control. Selecting every file in a folder at once in the file picker achieves the same result — this is by design, not a limitation to work around.
+      </div>
+    </div>
+    <div class="callout info">
+      <div class="callout-icon">ℹ</div>
+      <div class="callout-body">
+        <strong>Scanned statements are handled automatically</strong>
+        If the PDF has no extractable text (a scanned copy), the app automatically falls back to sending page images to Claude instead — no action needed from you.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step s4">
+  <div class="step-header">
+    <div class="step-num">4</div>
+    <div class="step-title">Confirm Where You'll Extract the ZIP</div>
+    <div class="step-tag">⚠ Important</div>
+  </div>
+  <div class="step-body">
+    <p>Before running, the app asks: <strong>"Where will you extract the downloaded ZIP?"</strong> — defaulting to your Downloads folder (auto-detected from your Windows account, not hardcoded).</p>
+    <div class="callout danger">
+      <div class="callout-icon">⛔</div>
+      <div class="callout-body">
+        <strong>This is baked into the Excel — get it right before running</strong>
+        The "PDF/Reference" links in the generated Excel are <strong>absolute file paths</strong> built from whatever you type here. They will only work if the ZIP is later extracted to <em>exactly</em> that folder. If you leave the default, extract to your Downloads folder as normal and the links will just work.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 5 -->
+<div class="step s5">
+  <div class="step-header">
+    <div class="step-num">5</div>
+    <div class="step-title">Run Matching</div>
+    <div class="step-tag">Automated</div>
+  </div>
+  <div class="step-body">
+    <p>Click <strong>Run Matching</strong>. The progress bar walks through:</p>
+    <div class="timeline-box">
+      <div class="timeline-row">
+        <div class="timeline-dot">1</div>
+        <div class="timeline-content">
+          <div class="timeline-title">Statement read</div>
+          <div class="timeline-desc">Claude extracts every transaction line, plus the month/year the claim should be filed under</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot">2</div>
+        <div class="timeline-content">
+          <div class="timeline-title">Receipts read (in parallel)</div>
+          <div class="timeline-desc">Company name, date, amount, document type, and Application Number if it's a MyIPO filing</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot">3</div>
+        <div class="timeline-content">
+          <div class="timeline-title">Matched by exact amount</div>
+          <div class="timeline-desc">A receipt must equal the transaction amount exactly (floating-point rounding only) — merchant-name similarity only breaks ties between receipts sharing the same amount</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot">4</div>
+        <div class="timeline-content">
+          <div class="timeline-title">Categorised</div>
+          <div class="timeline-desc">Claude assigns a category and claim status to every transaction</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout purple">
+      <div class="callout-icon">⚡</div>
+      <div class="callout-body">
+        <strong>Receipt parsing is cached per run</strong>
+        Re-clicking Run Matching without changing the uploaded statement or receipt files reuses the previous extraction results instead of calling Claude again — no wasted credits.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">C — Understanding the Output</div>
+
+<!-- STEP 6 -->
+<div class="step s6">
+  <div class="step-header">
+    <div class="step-num">6</div>
+    <div class="step-title">Reviewing the Results Table</div>
+    <div class="step-tag">Review</div>
+  </div>
+  <div class="step-body">
+    <p>The results table has one row per transaction, color-coded by claim status:</p>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:#D9EBEF;"></span> Claimable — MyIPO, Open AI, Claude, Microsoft, Travel Air Ticket, Software Subscriptions, Gov/Regulatory Fees, Utility/Admin</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#FFF2CC;"></span> Non-claimable — F&amp;B, Normal Payment, Credit Refund, Bank Interest</div>
+    </div>
+    <p>Amounts always show 2 decimal places; any negative amount (refunds, credits, payments received) is shown in red.</p>
+    <div class="callout warning">
+      <div class="callout-icon">⚠</div>
+      <div class="callout-body">
+        <strong>If a receipt you expected to match didn't</strong>
+        Open the "🔍 Debug: what was extracted from each receipt" expander below the table. It shows exactly what Claude read off every candidate receipt — company, date, amount, currency. Since matching requires an <strong>exact</strong> amount (no tolerance), even a one-cent misread will prevent a match.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 7 -->
+<div class="step s7">
+  <div class="step-header">
+    <div class="step-num">7</div>
+    <div class="step-title">Excel Format & Receipt Naming</div>
+    <div class="step-tag">Reference</div>
+  </div>
+  <div class="step-body">
+    <p>The sheet opens with a merged title row above the table:</p>
+    <div class="cmd-block">
+      <div class="cmd-label">Title row</div>
+      <div class="cmd-text">Standard Chartered (08 May - 05 June)</div>
+    </div>
+    <p style="margin-top:14px;"><strong>Columns (below the title row):</strong></p>
+    <div class="cmd-block">
+      <div class="cmd-label">Column order</div>
+      <div class="cmd-text">Posting Date | Transaction Date | No. | PDF/Reference | Description | Currency | Foreign Amount | Amount (RM) | Category | Claim Notes | Supporting Doc Obtained?</div>
+    </div>
+    <ul class="substeps">
+      <li><strong>No.</strong> sits next to <strong>PDF/Reference</strong> so you can match a row to its renamed receipt file at a glance</li>
+      <li><strong>PDF/Reference</strong> is a clickable <strong>absolute</strong> link built from the save location confirmed in Step 4 — see the warning below</li>
+      <li>MyIPO receipts are renamed to their <strong>Application Number</strong> (e.g. <em>TM2026012345.pdf</em>)</li>
+      <li>All other matched receipts are renamed <strong>{No.}. {DDMMYY}_{Receipt|INV}_{Company}_RM{Amount}.{ext}</strong> (e.g. <em>2. 110526_Receipt_AirSelangor_RM166.50.pdf</em>)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- STEP 8 -->
+<div class="step s8">
+  <div class="step-header">
+    <div class="step-num">8</div>
+    <div class="step-title">Downloading & Extracting Correctly</div>
+    <div class="step-tag">⚠ Read this</div>
+  </div>
+  <div class="step-body">
+    <ul class="substeps">
+      <li>Click <strong>Download Claims Excel only</strong> if you just need the report</li>
+      <li>Click <strong>Download Excel + Matched Receipts (ZIP)</strong> for the full output</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong>The ZIP is named:</strong></p>
+    <div class="cmd-block">
+      <div class="cmd-label">Example</div>
+      <div class="cmd-text">Standard Chartered - June Claimable Invoice (2026).zip</div>
+    </div>
+    <p>Extracting it produces this exact layout (flat, no extra nesting):</p>
+    <div style="background:#faf5ff;border:1.5px solid #d8b4fe;border-radius:10px;padding:18px 22px;margin:16px 0;font-family:'Consolas',monospace;font-size:13px;color:#4c1d95;line-height:2;">
+      <div style="color:#7c3aed;font-weight:700;">📁 Standard Chartered - June Claimable Invoice (2026)/</div>
+      <div style="padding-left:20px;">├── 📁 June_Statement/</div>
+      <div style="padding-left:40px;color:#0f172a;">├── June Statement (Start - End).pdf</div>
+      <div style="padding-left:40px;color:#0f172a;">└── 06. June Claimable Invoice (2026).xlsx</div>
+      <div style="padding-left:20px;">└── 📁 Invoice Reference/</div>
+      <div style="padding-left:40px;color:#0f172a;">└── (renamed, matched receipts)</div>
+    </div>
+
+    <div class="callout danger">
+      <div class="callout-icon">⛔</div>
+      <div class="callout-body">
+        <strong>Before opening the Excel: extract the ZIP fully first</strong>
+        Right-click the downloaded ZIP → <strong>Extract All</strong> → confirm the destination matches the save location you gave in Step 4 (this is normally the default, since Windows names the extracted folder after the ZIP) → open the Excel from <em>inside that extracted folder</em>.<br><br>
+        If you instead double-click the Excel while it's still sitting <em>inside</em> the unextracted ZIP, Windows only pulls that one file out into a temporary folder — the <strong>Invoice Reference</strong> folder won't be there next to it, and every "PDF/Reference" link will fail with a <strong>"Windows cannot find..."</strong> error. This is the single most common way these links appear "broken" when nothing is actually wrong with the file.
+      </div>
+    </div>
+
+    <div class="callout success">
+      <div class="callout-icon">✅</div>
+      <div class="callout-body">
+        <strong>Nothing in SharePoint (or anywhere else) is touched automatically</strong>
+        You always have a chance to review the Excel and the renamed receipts locally before deciding whether — and where — to upload them onward. That upload step is intentionally manual.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">D — Troubleshooting</div>
+
+<div class="step" style="border-left-color:#0891b2;">
+  <div class="step-header">
+    <div class="step-num" style="background:#0891b2;">!</div>
+    <div class="step-title">Common Problems & Fixes</div>
+    <div class="step-tag" style="background:#e0f7fa;color:#0891b2;">Reference</div>
+  </div>
+  <div class="step-body">
+    <table class="cmd-table">
+      <tr><th>Problem</th><th>Fix</th></tr>
+      <tr><td>App won't start: "ANTHROPIC_API_KEY not set"</td><td>Add the key to key.env (Step 1), then restart the app.</td></tr>
+      <tr><td>"Your account doesn't have enough credit balance"</td><td>Go to console.anthropic.com → Plans &amp; Billing to add credits, then click Run Matching again.</td></tr>
+      <tr><td>"Windows cannot find..." when clicking a PDF/Reference link</td><td>You almost certainly opened the Excel from inside an unextracted ZIP, or extracted to a different folder than the one confirmed in Step 4. Extract fully to that exact folder and reopen (see Step 8).</td></tr>
+      <tr><td>0 transactions extracted from statement</td><td>Statement may be a low-quality scan. Check it opens and is legible in a normal PDF viewer first.</td></tr>
+      <tr><td>Receipts uploaded but nothing matches</td><td>Open the Debug expander and compare extracted amounts against the transaction amounts — matching is exact, so even a 1-cent misread breaks it.</td></tr>
+      <tr><td>Some receipts show an error in the Debug table</td><td>Usually an unsupported file type or an unreadable/corrupted file — check the filename and format (PDF, PNG, JPG only).</td></tr>
+      <tr><td>Re-running gives identical results instantly</td><td>Expected — receipt parsing is cached per uploaded file set for this session. Change the statement or receipt files to force a fresh read.</td></tr>
+      <tr><td>Wrong category assigned to a transaction</td><td>No manual override in the UI yet — note it and correct the Excel directly, or flag it for a prompt-rule adjustment.</td></tr>
+    </table>
+
+    <div class="callout danger" style="margin-top:20px;">
+      <div class="callout-icon">⛔</div>
+      <div class="callout-body">
+        <strong>This tool never writes anywhere on its own</strong>
+        There is no upload/write code path to SharePoint, cloud storage, or anywhere else in this app by design. If a future version needs one, it must be a deliberate, separately reviewed change — not assumed.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:880px; margin:48px auto 0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:20px; font-size:12px; color:#94a3b8;">
+  <span>SOP-CCM-001 · Quality Oracle Sdn. Bhd.</span>
+  <span>Version 2.0 · July 2026 · Confidential</span>
+</div>
+
+</body>
+</html>
